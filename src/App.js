@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { photosApi } from './shared/services/photos';
 
 import Searchbar from './components/Searchbar';
@@ -10,96 +10,78 @@ import Modal from './components/Modal';
 import './App.css';
 import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css';
 
-class App extends Component {
-  state = {
-    gallery: [],
-    querySubmited: '',
-    page: 1,
-    loading: false,
-    showModal: false,
-    currentLargeImageURL: '',
-    currentTags: '',
-    error: '',
-    // status: 'idle',
-  };
+function App() {
+  const [gallery, setGallery] = useState([]);
+  const [querySubmited, setQuerySubmited] = useState('');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [currentLargeImageURL, setCurrentLargeImageURL] = useState('');
+  const [currentTags, setCurrentTags] = useState('');
+  const [err, setErr] = useState('');
 
-  componentDidUpdate() {
-    if (this.state.loading) {
-      const { page, querySubmited } = this.state;
-
+  useEffect(() => {
+    if (loading) {
       photosApi
         .searchPhotos(page, querySubmited)
         .then(res => {
           const newgallery = res.data.hits;
 
           if (page === 1) {
-            this.setState({
-              gallery: [...newgallery],
-              loading: false,
-            });
+            setGallery([...newgallery]);
           } else {
-            this.setState(prevstate => ({
-              gallery: [...prevstate.gallery, ...newgallery],
-              loading: false,
-            }));
+            setGallery([...gallery, ...newgallery]);
           }
+          setLoading(false);
+          setErr('');
         })
         .catch(error => {
           error = new Error(`Something went wrong. The error apiered: "${error.message}"`);
-          this.setState({ err: error.message, gallery: [] });
+          setErr(error.message);
+          setGallery([]);
         })
-        .finally(this.setState({ loading: false }));
+        .finally(setLoading(false));
     }
-  }
+  }, [loading]);
 
-  handleSubmit = query => {
-    if (query !== this.state.querySubmited) {
-      this.setState({
-        querySubmited: query,
-        page: 1,
-        loading: true,
-      });
+  const handleSubmit = query => {
+    if (query !== querySubmited) {
+      setQuerySubmited(query);
+      setPage(1);
+      setLoading(true);
     }
   };
 
-  handleLoadMore = () => {
-    this.setState(prevstate => ({
-      page: prevstate.page + 1,
-      loading: true,
-    }));
+  const handleLoadMore = () => {
+    setPage(page + 1);
+    setLoading(true);
   };
 
-  toggleModal = id => {
-    const currentImage = this.state.gallery.find(image => image.id === id);
-    this.setState(prevstate => ({
-      showModal: !prevstate.showModal,
-      currentLargeImageURL: currentImage?.largeImageURL,
-      currentTags: currentImage?.tags,
-    }));
+  const toggleModal = id => {
+    const currentImage = gallery.find(image => image.id === id);
+    setShowModal(!showModal);
+    setCurrentLargeImageURL(currentImage?.largeImageURL);
+    setCurrentTags(currentImage?.tags);
   };
 
-  render() {
-    return (
-      <div className="App">
-        {this.state.loading && (
-          <Loader type="Bars" color="#00BFFF" height={100} width={100} timeout={1000} />
-        )}
-        {this.state.err && <p>{this.state.err}</p>}
-        {!!this.state.gallery.length && (
-          <>
-            <ImageGallery gallery={this.state.gallery} onShowModal={this.toggleModal} />
-            <Button onClick={this.handleLoadMore} />
-          </>
-        )}
-        {this.state.showModal && (
-          <Modal closeModal={this.toggleModal}>
-            <img src={this.state.currentLargeImageURL} alt={this.state.currentTags} />
-          </Modal>
-        )}
-        <Searchbar onSubmit={this.handleSubmit} />
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      {loading && <Loader type="Bars" color="#00BFFF" height={100} width={100} timeout={1000} />}
+      {err && <p>{err}</p>}
+      {!!gallery.length && (
+        <>
+          <ImageGallery gallery={gallery} onShowModal={toggleModal} />
+          <Button onClick={handleLoadMore} />
+        </>
+      )}
+      {showModal && (
+        <Modal closeModal={toggleModal}>
+          <img src={currentLargeImageURL} alt={currentTags} />
+        </Modal>
+      )}
+      <Searchbar onSubmit={handleSubmit} />
+    </div>
+  );
 }
 
 export default App;

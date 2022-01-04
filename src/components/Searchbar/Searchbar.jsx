@@ -1,43 +1,39 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import PropTypes from 'prop-types';
 
 import styles from './Searchbar.module.css';
 
-class Searchbar extends Component {
-  state = {
-    query: '',
+function Searchbar({ onSubmit }) {
+  const [query, setQuery] = useState('');
+
+  const handleChange = event => {
+    setQuery(event.target.value);
   };
 
-  handleChange = event => {
-    this.setState({ query: event.target.value });
-  };
-
-  handleSubmit = event => {
+  const handleSubmit = event => {
     event.preventDefault();
 
-    this.props.onSubmit(this.state.query);
+    onSubmit(query);
   };
 
-  render() {
-    return (
-      <header className={styles.searchbar}>
-        <form className={styles.form} onSubmit={this.handleSubmit}>
-          <button type="submit" className={styles.searchbarButton}></button>
+  return (
+    <header className={styles.searchbar}>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <button type="submit" className={styles.searchbarButton}></button>
 
-          <input
-            onChange={this.handleChange}
-            className={styles.searchbarInput}
-            type="text"
-            autoComplete="false"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.query}
-          />
-        </form>
-      </header>
-    );
-  }
+        <input
+          onChange={handleChange}
+          className={styles.searchbarInput}
+          type="text"
+          autoComplete="false"
+          autoFocus
+          placeholder="Search images and photos"
+          value={query}
+        />
+      </form>
+    </header>
+  );
 }
 
 export default Searchbar;
