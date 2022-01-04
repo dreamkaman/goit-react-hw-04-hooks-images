@@ -4,6 +4,8 @@ import PropTypes from 'prop-types';
 
 import styles from './Modal.module.css';
 
+const modalPortal = document.querySelector('#modal-root');
+
 class Modal extends Component {
   componentDidMount() {
     window.addEventListener('keydown', this.handleKeyDown);
@@ -27,8 +29,6 @@ class Modal extends Component {
 
   render() {
     const { children } = this.props;
-
-    const modalPortal = document.querySelector('#modal-root');
 
     return createPortal(
       <div className={styles.overlay} onClick={this.handleBackdropClick}>

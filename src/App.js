@@ -15,69 +15,84 @@ class App extends Component {
     gallery: [],
     querySubmited: '',
     page: 1,
-    // loadMore: false, //pereproverit!
     loading: false,
     showModal: false,
     currentLargeImageURL: '',
     currentTags: '',
+    error: '',
+    // status: 'idle',
   };
 
-  componentDidUpdate(prevprops, prevstate) {
-    if (prevstate.querySubmited && prevstate.querySubmited !== this.state.querySubmited) {
-      this.setState({ gallery: [], page: 1 });
-    }
-
+  componentDidUpdate() {
     if (this.state.loading) {
       const { page, querySubmited } = this.state;
 
-      photosApi.searchPhotos(page, querySubmited).then(res => {
-        const newgallery = res.data.hits;
+      photosApi
+        .searchPhotos(page, querySubmited)
+        .then(res => {
+          const newgallery = res.data.hits;
 
-        this.setState(prevstate => ({
-          gallery: [...prevstate.gallery, ...newgallery],
-          page: prevstate.page + 1,
-          loading: false,
-        }));
-      });
+          if (page === 1) {
+            this.setState({
+              gallery: [...newgallery],
+              loading: false,
+            });
+          } else {
+            this.setState(prevstate => ({
+              gallery: [...prevstate.gallery, ...newgallery],
+              loading: false,
+            }));
+          }
+        })
+        .catch(error => {
+          error = new Error(`Something went wrong. The error apiered: "${error.message}"`);
+          this.setState({ err: error.message, gallery: [] });
+        })
+        .finally(this.setState({ loading: false }));
     }
   }
 
   handleSubmit = query => {
-    this.setState({
-      querySubmited: query,
-      loading: true,
-    });
+    if (query !== this.state.querySubmited) {
+      this.setState({
+        querySubmited: query,
+        page: 1,
+        loading: true,
+      });
+    }
   };
 
   handleLoadMore = () => {
-    this.setState({ loading: true });
+    this.setState(prevstate => ({
+      page: prevstate.page + 1,
+      loading: true,
+    }));
   };
 
   toggleModal = id => {
-    this.setState(prevstate => ({ showModal: !prevstate.showModal }));
-    this.getValuesById(id);
-  };
-
-  getValuesById = id => {
     const currentImage = this.state.gallery.find(image => image.id === id);
-    if (currentImage) {
-      this.setState({
-        currentLargeImageURL: currentImage.largeImageURL,
-        currentTags: currentImage.tags,
-      });
-    }
+    this.setState(prevstate => ({
+      showModal: !prevstate.showModal,
+      currentLargeImageURL: currentImage?.largeImageURL,
+      currentTags: currentImage?.tags,
+    }));
   };
 
   render() {
     return (
       <div className="App">
-        <ImageGallery gallery={this.state.gallery} onShowModal={this.toggleModal} />
         {this.state.loading && (
           <Loader type="Bars" color="#00BFFF" height={100} width={100} timeout={1000} />
         )}
-        {!!this.state.gallery.length && <Button onClick={this.handleLoadMore} />}
+        {this.state.err && <p>{this.state.err}</p>}
+        {!!this.state.gallery.length && (
+          <>
+            <ImageGallery gallery={this.state.gallery} onShowModal={this.toggleModal} />
+            <Button onClick={this.handleLoadMore} />
+          </>
+        )}
         {this.state.showModal && (
-          <Modal closeModal={() => this.toggleModal()}>
+          <Modal closeModal={this.toggleModal}>
             <img src={this.state.currentLargeImageURL} alt={this.state.currentTags} />
           </Modal>
         )}
