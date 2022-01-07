@@ -20,6 +20,17 @@ function App() {
   const [currentTags, setCurrentTags] = useState('');
   const [err, setErr] = useState('');
 
+  const [bigState, setBigState] = useState({
+    gallery: [],
+    querySubmited: '',
+    page: 1,
+    loading: false,
+    showModal: false,
+    currentLargeImageURL: '',
+    currentTags: '',
+    err: '',
+  });
+
   useEffect(() => {
     if (loading) {
       photosApi
